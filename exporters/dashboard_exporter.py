@@ -1,0 +1,1508 @@
+"""
+Interactive HTML Dashboard Exporter
+Menghasilkan halaman web interaktif modern (Single Page App) khusus kurasi lowongan
+S1 Biologi (QA/QC Food Safety, HACCP/GMP, Mikrobiologi, Mikologi, Bioremediasi/WWTP).
+"""
+
+import json
+from pathlib import Path
+from typing import List
+from scrapers.base_scraper import JobItem
+
+def export_to_dashboard(jobs: List[JobItem], output_path: Path) -> Path:
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    jobs_data = [j.to_dict() for j in jobs]
+    jobs_json = json.dumps(jobs_data, ensure_ascii=False)
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal Karier S1 Biologi Fresh Graduate - Jabek (Jakarta & Bekasi)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- SheetJS for client-side Excel export -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {{
+      --bg-main: #0B1315;
+      --bg-card: rgba(20, 32, 36, 0.9);
+      --bg-card-hover: rgba(28, 46, 52, 0.98);
+      --accent: #10B981;
+      --accent-hover: #059669;
+      --accent-glow: rgba(16, 185, 129, 0.25);
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --border: rgba(45, 71, 78, 0.55);
+      --badge-bg: rgba(16, 185, 129, 0.14);
+      --badge-text: #34D399;
+      --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }}
+
+    * {{
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }}
+
+    body {{
+      font-family: var(--font-family);
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(16, 185, 129, 0.1) 0%, transparent 45%),
+        radial-gradient(circle at 90% 25%, rgba(14, 165, 233, 0.1) 0%, transparent 45%);
+    }}
+
+    header {{
+      padding: 2.5rem 1.5rem 1.5rem;
+      max-width: 1240px;
+      margin: 0 auto;
+    }}
+
+    .header-badge {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.95rem;
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      font-size: 0.85rem;
+      font-weight: 700;
+      border-radius: 9999px;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      margin-bottom: 0.75rem;
+    }}
+
+    h1 {{
+      font-size: 2.3rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #FFFFFF 30%, #A7F3D0 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }}
+
+    .header-desc {{
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 820px;
+      line-height: 1.6;
+    }}
+
+    .specialty-tags {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.85rem;
+    }}
+
+    .specialty-tag {{
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: #CBD5E1;
+    }}
+
+    /* Live Status Bar & Refresh Button */
+    .live-status-bar {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 0.75rem 1.25rem;
+      border-radius: 14px;
+      margin-top: 1.25rem;
+      flex-wrap: wrap;
+      transition: background 0.4s, border-color 0.4s;
+    }}
+
+    .live-status-bar.server-offline {{
+      background: rgba(245, 158, 11, 0.10);
+      border-color: rgba(245, 158, 11, 0.35);
+    }}
+
+    /* Offline Banner */
+    .offline-banner {{
+      display: none;
+      max-width: 1240px;
+      margin: 0.5rem auto 0;
+      padding: 0 1.5rem;
+    }}
+
+    .offline-banner-inner {{
+      background: rgba(245, 158, 11, 0.10);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 14px;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }}
+
+    .offline-banner-icon {{
+      font-size: 1.4rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }}
+
+    .offline-banner-body {{
+      flex: 1;
+      min-width: 0;
+    }}
+
+    .offline-banner-title {{
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #FCD34D;
+      margin-bottom: 0.35rem;
+    }}
+
+    .offline-banner-desc {{
+      font-size: 0.85rem;
+      color: #FDE68A;
+      line-height: 1.6;
+    }}
+
+    .offline-banner-desc code {{
+      background: rgba(0,0,0,0.35);
+      padding: 0.15rem 0.45rem;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: #FFF;
+    }}
+
+    .offline-banner-link {{
+      display: inline-block;
+      margin-top: 0.55rem;
+      padding: 0.4rem 1rem;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      border-radius: 8px;
+      color: #FCD34D;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }}
+
+    .offline-banner-link:hover {{
+      background: rgba(245, 158, 11, 0.3);
+    }}
+
+    .live-status-left {{
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-size: 0.88rem;
+      color: #A7F3D0;
+      flex-wrap: wrap;
+    }}
+
+    .pulse-dot {{
+      width: 10px;
+      height: 10px;
+      background-color: #10B981;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse 2s infinite;
+    }}
+
+    @keyframes pulse {{
+      0% {{
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      }}
+      70% {{
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+      }}
+      100% {{
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }}
+    }}
+
+    .btn-refresh {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+      color: #FFFFFF;
+      border: none;
+      padding: 0.65rem 1.35rem;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+    }}
+
+    .btn-refresh:hover {{
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(16, 185, 129, 0.5);
+    }}
+
+    .btn-refresh:active {{
+      transform: translateY(0);
+    }}
+
+    .btn-refresh.loading {{
+      opacity: 0.85;
+      cursor: wait;
+      pointer-events: none;
+    }}
+
+    .btn-refresh.loading .refresh-icon {{
+      animation: spin 0.8s linear infinite;
+    }}
+
+    @keyframes spin {{
+      from {{ transform: rotate(0deg); }}
+      to {{ transform: rotate(360deg); }}
+    }}
+
+    .search-row {{
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      width: 100%;
+    }}
+
+    .search-clear-btn {{
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.35rem;
+      cursor: pointer;
+      display: none;
+      line-height: 1;
+    }}
+
+    .search-clear-btn:hover {{
+      color: #FFFFFF;
+    }}
+
+    .btn-refresh-compact {{
+      padding: 0.95rem 1.35rem;
+      border-radius: 14px;
+      white-space: nowrap;
+    }}
+
+    /* Export Excel Button */
+    .btn-excel {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, #1D6F42 0%, #145A32 100%);
+      color: #FFFFFF;
+      border: 1px solid rgba(29, 111, 66, 0.6);
+      padding: 0.95rem 1.35rem;
+      border-radius: 14px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(29, 111, 66, 0.35);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      white-space: nowrap;
+    }}
+
+    .btn-excel:hover {{
+      background: linear-gradient(135deg, #196F3D 0%, #0E6251 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(29, 111, 66, 0.55);
+    }}
+
+    .btn-excel:active {{
+      transform: translateY(0);
+    }}
+
+    .btn-excel.exporting {{
+      opacity: 0.8;
+      cursor: wait;
+      pointer-events: none;
+    }}
+
+    /* Toast Notifications */
+    .toast-container {{
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      pointer-events: none;
+      max-width: 440px;
+    }}
+
+    .toast {{
+      background: rgba(17, 28, 30, 0.96);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #F8FAFC;
+      padding: 0.9rem 1.35rem;
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+      backdrop-filter: blur(12px);
+      font-size: 0.92rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.3s ease;
+      line-height: 1.45;
+    }}
+
+    .toast-success {{
+      border-color: #10B981;
+      color: #ECFDF5;
+    }}
+
+    .toast-info {{
+      border-color: #38BDF8;
+      color: #F0F9FF;
+    }}
+
+    @keyframes toastIn {{
+      from {{ transform: translateY(20px); opacity: 0; }}
+      to {{ transform: translateY(0); opacity: 1; }}
+    }}
+
+    /* Stat Cards */
+    .stats-container {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      max-width: 1240px;
+      margin: 1.5rem auto;
+      padding: 0 1.5rem;
+    }}
+
+    .stat-card {{
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 1.25rem;
+      border-radius: 14px;
+      backdrop-filter: blur(12px);
+    }}
+
+    .stat-label {{
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }}
+
+    .stat-val {{
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: #FFFFFF;
+    }}
+
+    /* Controls Bar */
+    .controls {{
+      max-width: 1240px;
+      margin: 1.5rem auto;
+      padding: 0 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }}
+
+    .search-box {{
+      position: relative;
+      width: 100%;
+    }}
+
+    .search-input {{
+      width: 100%;
+      padding: 0.95rem 1rem 0.95rem 2.75rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      color: var(--text-main);
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.2s;
+    }}
+
+    .search-input:focus {{
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }}
+
+    .search-icon {{
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.1rem;
+      color: var(--text-muted);
+    }}
+
+    .filter-section {{
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }}
+
+    .filter-tabs {{
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }}
+
+    .filter-btn {{
+      padding: 0.55rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }}
+
+    .filter-btn:hover {{
+      color: #FFFFFF;
+      background: var(--bg-card-hover);
+    }}
+
+    .filter-btn.active {{
+      background: var(--accent);
+      color: #0B1315;
+      border-color: var(--accent);
+      box-shadow: 0 0 14px var(--accent-glow);
+    }}
+
+    /* Job Grid */
+    .job-grid {{
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 1.5rem 4rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 1.25rem;
+    }}
+
+    .job-card {{
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      backdrop-filter: blur(12px);
+    }}
+
+    .job-card:hover {{
+      transform: translateY(-4px);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4);
+      border-color: rgba(16, 185, 129, 0.5);
+    }}
+
+    .card-top {{
+      margin-bottom: 1rem;
+    }}
+
+    .badge-row {{
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+    }}
+
+    .source-badge {{
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      background: #1E293B;
+      color: #94A3B8;
+    }}
+
+    .field-badge {{
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      background: rgba(14, 165, 233, 0.15);
+      color: #38BDF8;
+      border: 1px solid rgba(14, 165, 233, 0.3);
+    }}
+
+    .fg-badge {{
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      background: var(--badge-bg);
+      color: var(--badge-text);
+    }}
+
+    .job-title {{
+      font-size: 1.22rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 0.4rem;
+      line-height: 1.35;
+    }}
+
+    .company-name {{
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #34D399;
+      margin-bottom: 0.65rem;
+    }}
+
+    .meta-row {{
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }}
+
+    .meta-item {{
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }}
+
+    .keywords-wrap {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-bottom: 1.25rem;
+    }}
+
+    .keyword-pill {{
+      font-size: 0.72rem;
+      padding: 0.15rem 0.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: #CBD5E1;
+    }}
+
+    .card-actions {{
+      display: flex;
+      gap: 0.5rem;
+      margin-top: auto;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }}
+
+    .btn {{
+      padding: 0.65rem 1rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }}
+
+    .btn-apply {{
+      flex: 2;
+      background: var(--accent);
+      color: #0B1315;
+      border: none;
+    }}
+
+    .btn-apply:hover {{
+      background: var(--accent-hover);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }}
+
+    .btn-detail {{
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }}
+
+    .btn-detail:hover {{
+      background: rgba(255, 255, 255, 0.1);
+    }}
+
+    /* Modal */
+    .modal-backdrop {{
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }}
+
+    .modal-content {{
+      background: #111C1E;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      max-width: 680px;
+      width: 100%;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+    }}
+
+    .modal-header {{
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }}
+
+    .modal-body {{
+      padding: 1.5rem;
+      overflow-y: auto;
+      font-size: 0.93rem;
+      color: #CBD5E1;
+      line-height: 1.65;
+    }}
+
+    .modal-section-title {{
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #34D399;
+      margin-top: 1.65rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid rgba(52, 211, 153, 0.25);
+      padding-bottom: 0.4rem;
+      letter-spacing: -0.01em;
+      text-transform: uppercase;
+    }}
+
+    .modal-section-title:first-child {{
+      margin-top: 0.2rem;
+    }}
+
+    .modal-paragraph {{
+      margin-top: 0.4rem;
+      margin-bottom: 0.85rem;
+      color: #E2E8F0;
+      line-height: 1.7;
+    }}
+
+    .modal-list {{
+      margin-top: 0.4rem;
+      margin-bottom: 1.1rem;
+      padding-left: 1.35rem;
+      color: #CBD5E1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }}
+
+    .modal-list li {{
+      line-height: 1.6;
+    }}
+
+    .live-status-bar {{
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: 0.85rem;
+      font-size: 0.82rem;
+      color: #94A3B8;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      padding: 0.4rem 0.85rem;
+      border-radius: 8px;
+      width: fit-content;
+    }}
+
+    .pulse-dot {{
+      width: 8px;
+      height: 8px;
+      background: #10B981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10B981;
+      animation: pulse 2s infinite;
+    }}
+
+    @keyframes pulse {{
+      0% {{ transform: scale(0.95); opacity: 0.7; }}
+      50% {{ transform: scale(1.25); opacity: 1; }}
+      100% {{ transform: scale(0.95); opacity: 0.7; }}
+    }}
+
+    .modal-footer {{
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }}
+
+    .close-btn {{
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }}
+
+    .empty-state {{
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--text-muted);
+    }}
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-badge">
+      <span>🧬 S1 Biologi Fresh Graduate Portal</span>
+      <span>•</span>
+      <span>Jakarta & Bekasi (Jabek)</span>
+    </div>
+    <h1>Direktori Lowongan Kerja Biologi & QC Terkurasi</h1>
+    <p class="header-desc">
+      Direktori pekerjaan terverifikasi dari LinkedIn, Glints, JobStreet, Kalibrr, dan Karir.com untuk lulusan <strong>S1 Biologi</strong> dengan peminatan <strong>QA/QC & Food Safety (HACCP/GMP)</strong>, <strong>Mikrobiologi & Mikologi</strong>, serta <strong>Bioremediasi & Waste Treatment (WWTP/IPAL)</strong> di kawasan industri Jakarta & Bekasi.
+    </p>
+    <div class="specialty-tags">
+      <span class="specialty-tag">🛡️ QA/QC & Food Safety</span>
+      <span class="specialty-tag">📋 HACCP & GMP / FSSC 22000</span>
+      <span class="specialty-tag">🔬 Mikrobiologi & Uji ALT</span>
+      <span class="specialty-tag">🍄 Mikologi & Fungi / Ragi</span>
+      <span class="specialty-tag">🌿 Bioremediasi & Pengolahan Limbah (WWTP/IPAL)</span>
+    </div>
+    <div class="live-status-bar">
+      <div class="live-status-left">
+        <span class="pulse-dot"></span>
+        <span id="live-sync-text">Realtime Auto-Refresh Aktif (Tiap 5 Menit)</span>
+        <span>•</span>
+        <span id="last-updated-time">Terakhir diperbarui: Baru saja</span>
+      </div>
+      <button class="btn-refresh" id="btn-refresh-header" onclick="triggerRefresh()" title="Klik untuk menyinkronkan data & ambil lowongan terbaru">
+        <span class="refresh-icon">🔄</span>
+        <span class="refresh-text">Refresh & Get New Jobs</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Offline Banner: muncul otomatis jika server scraper tidak aktif -->
+  <div class="offline-banner" id="offline-banner">
+    <div class="offline-banner-inner">
+      <div class="offline-banner-icon">⚠️</div>
+      <div class="offline-banner-body">
+        <div class="offline-banner-title">Server Scraper Tidak Aktif — Tombol Refresh Tidak Akan Mengambil Data Baru</div>
+        <div class="offline-banner-desc">
+          Untuk mengaktifkan scraping real-time, jalankan perintah berikut di terminal dari folder project:<br>
+          <code>start_auto_scraper.bat</code> &nbsp;atau&nbsp; <code>python scheduler.py</code><br><br>
+          Setelah server aktif, buka dashboard di: <code>http://localhost:8000/dashboard.html</code>
+          &nbsp;<a class="offline-banner-link" href="http://localhost:8000/dashboard.html" target="_blank">🚀 Buka via Server</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-container">
+    <div class="stat-card">
+      <div class="stat-label">Total Lowongan Terkumpul</div>
+      <div class="stat-val" id="stat-total">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">QA/QC & Food Safety</div>
+      <div class="stat-val" id="stat-qa">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Mikrobiologi & Lab</div>
+      <div class="stat-val" id="stat-micro">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Area Bekasi / Cikarang</div>
+      <div class="stat-val" id="stat-bekasi">0</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="search-row">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" class="search-input" placeholder="Cari posisi, perusahaan, atau keahlian (misal: mikrobiologi, HACCP, GMP, WWTP, QC pangan)..." />
+        <button id="search-clear" class="search-clear-btn" onclick="clearSearch()" title="Hapus pencarian">&times;</button>
+      </div>
+      <button class="btn-refresh btn-refresh-compact" onclick="triggerRefresh()" title="Ambil data lowongan terbaru">
+        <span class="refresh-icon">🔄</span>
+        <span class="refresh-text">Refresh</span>
+      </button>
+      <button class="btn-excel" id="btn-export-excel" onclick="exportToExcel()" title="Unduh semua lowongan ke file Excel">
+        <span>📊</span>
+        <span class="excel-text">Export Excel</span>
+      </button>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">Semua Bidang & Area</button>
+        <button class="filter-btn" data-filter="qa_qc">🛡️ QA/QC & Food Safety (HACCP/GMP)</button>
+        <button class="filter-btn" data-filter="microbiology">🔬 Mikrobiologi & Mikologi</button>
+        <button class="filter-btn" data-filter="bioremediation">🌿 Bioremediasi & WWTP/IPAL</button>
+        <button class="filter-btn" data-filter="jakarta">📍 Jakarta</button>
+        <button class="filter-btn" data-filter="bekasi">🏭 Bekasi / Cikarang</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="job-grid" id="job-grid"></main>
+
+  <!-- Modal Detail -->
+  <div class="modal-backdrop" id="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h3 id="modal-title" style="color: #FFF; font-size: 1.25rem;"></h3>
+          <p id="modal-company" style="color: #38BDF8; font-size: 0.95rem;"></p>
+        </div>
+        <button class="close-btn" id="modal-close">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-desc"></div>
+      <div class="modal-footer">
+        <button class="btn btn-detail" id="modal-close-btn">Tutup</button>
+        <a href="#" target="_blank" class="btn btn-apply" id="modal-apply-btn">Lamar di Website Sumber &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const jobs = {jobs_json};
+    let currentFilter = 'all';
+    let searchQuery = '';
+
+    const grid = document.getElementById('job-grid');
+    const searchInput = document.getElementById('search-input');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalCompany = document.getElementById('modal-company');
+    const modalDesc = document.getElementById('modal-desc');
+    const modalApplyBtn = document.getElementById('modal-apply-btn');
+    const modalClose = document.getElementById('modal-close');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+
+    function updateStats() {{
+      document.getElementById('stat-total').innerText = jobs.length;
+      document.getElementById('stat-qa').innerText = jobs.filter(j => (j.field_category || '').includes('QA/QC') || (j.matched_keywords || []).some(k => ['qa', 'qc', 'haccp', 'gmp'].includes(k))).length;
+      document.getElementById('stat-micro').innerText = jobs.filter(j => (j.field_category || '').includes('Mikro') || (j.title || '').toLowerCase().includes('mikro')).length;
+      document.getElementById('stat-bekasi').innerText = jobs.filter(j => j.city_category === 'bekasi').length;
+    }}
+
+    function renderJobs() {{
+      const query = searchQuery.toLowerCase().trim();
+      const filtered = jobs.filter(job => {{
+        const field = (job.field_category || '').toLowerCase();
+        
+        // Filter Bidang & Area
+        if (currentFilter === 'qa_qc' && !field.includes('qa/qc') && !field.includes('food safety')) return false;
+        if (currentFilter === 'microbiology' && !field.includes('mikro')) return false;
+        if (currentFilter === 'bioremediation' && !field.includes('bioremediasi') && !field.includes('waste')) return false;
+        if (currentFilter === 'jakarta' && job.city_category !== 'jakarta') return false;
+        if (currentFilter === 'bekasi' && job.city_category !== 'bekasi') return false;
+
+        // Search Query
+        if (!query) return true;
+        const matchTitle = (job.title || '').toLowerCase().includes(query);
+        const matchCompany = (job.company || '').toLowerCase().includes(query);
+        const matchLoc = (job.location || '').toLowerCase().includes(query);
+        const matchField = field.includes(query);
+        const matchKeywords = (job.matched_keywords || []).some(k => k.toLowerCase().includes(query));
+        return matchTitle || matchCompany || matchLoc || matchField || matchKeywords;
+      }});
+
+      if (filtered.length === 0) {{
+        grid.innerHTML = `
+          <div class="empty-state">
+            <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem; color: #FFF;">Tidak ada lowongan yang sesuai</h3>
+            <p>Coba gunakan kata kunci lain seperti 'HACCP', 'mikrobiologi', 'QC', atau reset filter ke 'Semua Bidang'.</p>
+          </div>
+        `;
+        return;
+      }}
+
+      grid.innerHTML = filtered.map((job, idx) => {{
+        const keywordsHtml = (job.matched_keywords || []).map(k => `<span class="keyword-pill">#${{k}}</span>`).join('');
+        const areaLabel = job.city_category === 'bekasi' ? 'Bekasi / Cikarang' : 'Jakarta';
+
+        return `
+          <div class="job-card">
+            <div class="card-top">
+              <div class="badge-row">
+                <span class="source-badge">${{job.source}}</span>
+                <span class="field-badge">${{job.field_category || 'Biologi & QA/QC'}}</span>
+                <span class="fg-badge">Fresh Grad</span>
+                <span class="source-badge">${{areaLabel}}</span>
+              </div>
+              <h2 class="job-title">${{job.title}}</h2>
+              <div class="company-name">${{job.company}}</div>
+              
+              <div class="meta-row">
+                <div class="meta-item">📍 <span>${{job.location}}</span></div>
+                <div class="meta-item">💼 <span>${{job.experience_level || 'Fresh Graduate Welcome'}}</span></div>
+                <div class="meta-item">💰 <span>${{job.salary}}</span></div>
+                ${{job.posted_at ? `<div class="meta-item">⏱️ <span>${{job.posted_at}}</span></div>` : ''}}
+              </div>
+
+              ${{keywordsHtml ? `<div class="keywords-wrap">${{keywordsHtml}}</div>` : ''}}
+            </div>
+
+            <div class="card-actions">
+              <button class="btn btn-detail" onclick="openDetail(${{idx}})">Rincian</button>
+              <a href="${{job.apply_url}}" target="_blank" class="btn btn-apply">Lamar &rarr;</a>
+            </div>
+          </div>
+        `;
+      }}).join('');
+    }}
+
+    function formatJobDescription(text) {{
+      if (!text || text.trim() === '') {{
+        return '<p class="modal-paragraph">Deskripsi rincian dapat dilihat langsung pada tautan portal lamaran resmi di bawah ini.</p>';
+      }}
+
+      const lines = (text || '').split(/\\r?\\n/);
+      let html = '';
+      let inList = false;
+
+      // Regex untuk mendeteksi header Requirements, Responsibilities, Kualifikasi, dll.
+      const headerPatterns = [
+        /^(requirements|persyaratan|kualifikasi|job\\s*requirements|minimum\\s*qualifications|kualifikasi\\s*pekerjaan|syarat\\s*pelamar)/i,
+        /^(responsibilities|tanggung\\s*jawab|uraian\\s*tugas|job\\s*description|deskripsi\\s*pekerjaan|key\\s*responsibilities|what\\s*you\\s*will\\s*do|tugas\\s*utama)/i,
+        /^(fasilitas|benefits|keuntungan|perks|tunjangan)/i,
+        /^(keahlian\\s*terkait|skills|kompetensi)/i
+      ];
+
+      for (let rawLine of lines) {{
+        let line = rawLine.trim();
+        if (!line) {{
+          if (inList) {{ html += '</ul>'; inList = false; }}
+          continue;
+        }}
+
+        // Bersihkan tanda bullet atau angka awal jika ada untuk cek header
+        const cleanForHeader = line.replace(/^[-*•#\\d.]+\\s*/, '').replace(/[:：]+$/, '').trim();
+        
+        let matchedHeader = false;
+        for (let pat of headerPatterns) {{
+          if (pat.test(cleanForHeader) || (line.endsWith(':') && line.length < 45 && !line.includes('http'))) {{
+            if (inList) {{ html += '</ul>'; inList = false; }}
+            
+            let icon = '📌';
+            if (/responsib|tanggung|tugas|what\\s*you/i.test(cleanForHeader)) icon = '💼';
+            else if (/require|kualifikasi|syarat|kualif/i.test(cleanForHeader)) icon = '📋';
+            else if (/benefit|fasilitas/i.test(cleanForHeader)) icon = '🎁';
+            else if (/skill|keahlian/i.test(cleanForHeader)) icon = '🔬';
+
+            html += `<div class="modal-section-title">${{icon}} ${{cleanForHeader}}</div>`;
+            matchedHeader = true;
+            break;
+          }}
+        }}
+
+        if (matchedHeader) continue;
+
+        // Cek jika baris adalah item list / bullet point
+        if (/^[-*•]/.test(line) || /^\\d+[.)]\\s/.test(line)) {{
+          if (!inList) {{ html += '<ul class="modal-list">'; inList = true; }}
+          const itemText = line.replace(/^[-*•\\d.)]+\\s*/, '');
+          html += `<li>${{itemText}}</li>`;
+          continue;
+        }}
+
+        if (inList) {{ html += '</ul>'; inList = false; }}
+        html += `<p class="modal-paragraph">${{line}}</p>`;
+      }}
+
+      if (inList) html += '</ul>';
+      return html;
+    }}
+
+    window.openDetail = function(index) {{
+      const query = searchQuery.toLowerCase().trim();
+      const filtered = jobs.filter(job => {{
+        const field = (job.field_category || '').toLowerCase();
+        if (currentFilter === 'qa_qc' && !field.includes('qa/qc') && !field.includes('food safety')) return false;
+        if (currentFilter === 'microbiology' && !field.includes('mikro')) return false;
+        if (currentFilter === 'bioremediation' && !field.includes('bioremediasi') && !field.includes('waste')) return false;
+        if (currentFilter === 'jakarta' && job.city_category !== 'jakarta') return false;
+        if (currentFilter === 'bekasi' && job.city_category !== 'bekasi') return false;
+
+        if (!query) return true;
+        return (job.title || '').toLowerCase().includes(query) ||
+               (job.company || '').toLowerCase().includes(query) ||
+               (job.location || '').toLowerCase().includes(query) ||
+               field.includes(query) ||
+               (job.matched_keywords || []).some(k => k.toLowerCase().includes(query));
+      }});
+
+      const job = filtered[index];
+      if (!job) return;
+
+      modalTitle.innerText = job.title;
+      modalCompany.innerText = `${{job.company}} • ${{job.location}} (${{job.field_category || 'Biologi'}})`;
+      modalDesc.innerHTML = formatJobDescription(job.description);
+      modalApplyBtn.href = job.apply_url;
+      modal.style.display = 'flex';
+    }};
+
+    function closeModal() {{
+      modal.style.display = 'none';
+    }}
+
+    modalClose.onclick = closeModal;
+    modalCloseBtn.onclick = closeModal;
+    modal.onclick = (e) => {{ if (e.target === modal) closeModal(); }};
+
+    searchInput.addEventListener('input', (e) => {{
+      searchQuery = e.target.value;
+      const clearBtn = document.getElementById('search-clear');
+      if (clearBtn) clearBtn.style.display = searchQuery ? 'block' : 'none';
+      renderJobs();
+    }});
+
+    window.clearSearch = function() {{
+      searchQuery = '';
+      searchInput.value = '';
+      const clearBtn = document.getElementById('search-clear');
+      if (clearBtn) clearBtn.style.display = 'none';
+      renderJobs();
+    }};
+
+    filterBtns.forEach(btn => {{
+      btn.addEventListener('click', () => {{
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderJobs();
+      }});
+    }});
+
+    function updateLastTime() {{
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('id-ID', {{ hour: '2-digit', minute: '2-digit', second: '2-digit' }}) + ' WIB';
+      const el = document.getElementById('last-updated-time');
+      if (el) el.innerText = 'Terakhir diperbarui: ' + timeStr;
+    }}
+
+    // Toast Notification Helper
+    function showToast(message, type = 'success') {{
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${{type}}`;
+      const icon = type === 'success' ? '✨' : (type === 'info' ? '🔄' : 'ℹ️');
+      toast.innerHTML = `<span>${{icon}}</span><span>${{message}}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {{
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(15px)';
+        setTimeout(() => toast.remove(), 350);
+      }}, 3500);
+    }}
+
+    // Refresh & Get New Jobs Action — Full Scraping with Progress Polling
+    const SOURCE_EMOJI = {{
+      linkedin: '💼', glints: '🟣', jobstreet: '🏙️', kalibrr: '⚡', karir: '🔍'
+    }};
+    const SOURCE_LABELS = {{
+      linkedin: 'LinkedIn', glints: 'Glints', jobstreet: 'JobStreet',
+      kalibrr: 'Kalibrr', karir: 'Indeed / Karir.com'
+    }};
+
+    let _scrapePoller = null;
+
+    function _setRefreshButtons(loading, text) {{
+      document.querySelectorAll('.btn-refresh').forEach(b => {{
+        b.classList.toggle('loading', loading);
+        const t = b.querySelector('.refresh-text');
+        if (t) t.innerText = text || (b.classList.contains('btn-refresh-compact') ? 'Refresh' : 'Refresh & Get New Jobs');
+      }});
+    }}
+
+    async function _loadNewJobsFromJson() {{
+      const res = await fetch('lowongan_biologi_jabek.json?t=' + Date.now());
+      if (!res.ok) return null;
+      return await res.json();
+    }}
+
+    async function _applyNewJobs(newJobs) {{
+      if (!Array.isArray(newJobs) || newJobs.length === 0) return;
+      const prevCount = jobs.length;
+      
+      // Gabungkan data lama dan baru secara inkremental (jangan menimpa data lama)
+      const existingMap = new Map();
+      jobs.forEach(j => {{
+        const k = (j.apply_url || j.url || (j.title + '_' + j.company)).toLowerCase().trim();
+        existingMap.set(k, j);
+      }});
+      let newAdded = 0;
+      newJobs.forEach(j => {{
+        const k = (j.apply_url || j.url || (j.title + '_' + j.company)).toLowerCase().trim();
+        if (!existingMap.has(k)) newAdded++;
+        existingMap.set(k, j); // update / add
+      }});
+
+      jobs.length = 0;
+      jobs.push(...Array.from(existingMap.values()));
+      updateStats();
+      renderJobs();
+      updateLastTime();
+
+      if (newAdded > 0) {{
+        showToast(`🎉 +${{newAdded}} lowongan baru ditambahkan! Total ${{jobs.length}} lowongan tersimpan.`, 'success');
+      }} else {{
+        showToast(`✅ Data diperbarui: ${{jobs.length}} lowongan aktif & terkurasi.`, 'success');
+      }}
+    }}
+
+    function _stopPoller() {{
+      if (_scrapePoller) {{ clearInterval(_scrapePoller); _scrapePoller = null; }}
+    }}
+
+    window.triggerRefresh = async function() {{
+      if (document.querySelector('.btn-refresh.loading')) return; // cegah double-click
+
+      _setRefreshButtons(true, 'Menghubungkan ke scraper...');
+      showToast('🔌 Menghubungkan ke server scraper...', 'info');
+
+      // ── Coba POST ke server scraper ──
+      let serverOnline = false;
+      try {{
+        const startRes = await fetch('http://127.0.0.1:8000/api/scrape', {{
+          method: 'POST',
+          signal: AbortSignal.timeout(3000)
+        }});
+        const startData = await startRes.json();
+        if (startData.status === 'already_running') {{
+          showToast('⏳ Scraping sudah berjalan, memantau progress...', 'info');
+        }} else {{
+          showToast('🚀 Scraping dimulai! Mengambil lowongan dari semua portal...', 'info');
+        }}
+        serverOnline = true;
+      }} catch (e) {{
+        // Server tidak aktif — fallback reload file JSON
+        serverOnline = false;
+      }}
+
+      if (!serverOnline) {{
+        // ── Fallback: server tidak aktif, langsung reload JSON ──
+        showToast('⚠️ Server scraper tidak aktif. Memuat data terakhir yang tersedia...', 'info');
+        try {{
+          const newJobs = await _loadNewJobsFromJson();
+          if (newJobs) await _applyNewJobs(newJobs);
+          else {{ showToast('🔄 Memuat ulang halaman...', 'info'); setTimeout(() => window.location.reload(), 800); }}
+        }} catch (e) {{
+          setTimeout(() => window.location.reload(), 800);
+        }}
+        _setRefreshButtons(false);
+        return;
+      }}
+
+      // ── Polling /api/status setiap 1.5 detik ──
+      _stopPoller();
+      let lastPhase = '';
+      let lastSource = '';
+
+      _scrapePoller = setInterval(async () => {{
+        try {{
+          const statusRes = await fetch('http://127.0.0.1:8000/api/status?t=' + Date.now(), {{
+            signal: AbortSignal.timeout(2000)
+          }});
+          if (!statusRes.ok) return;
+          const s = await statusRes.json();
+
+          // ── Update tombol teks sesuai phase ──
+          const phase = s.phase || 'idle';
+          const src = s.current_source || '';
+
+          if (phase === 'scraping') {{
+            if (src && src !== lastSource) {{
+              lastSource = src;
+              const emoji = SOURCE_EMOJI[src] || '🔍';
+              const label = SOURCE_LABELS[src] || src;
+              const done = (s.sources_done || []).length;
+              const total = (s.sources_total || []).length || 1;
+              _setRefreshButtons(true, `${{emoji}} Scraping ${{label}}...`);
+              showToast(`${{emoji}} Scraping ${{label}}... (${{done+1}}/${{total}}) – ${{s.jobs_found}} lowongan terkumpul`, 'info');
+            }}
+          }} else if (phase === 'exporting' && lastPhase !== 'exporting') {{
+            lastPhase = 'exporting';
+            _setRefreshButtons(true, '💾 Menyimpan data...');
+            showToast(`📦 Ditemukan ${{s.jobs_found}} lowongan. Menyimpan & memperbarui dashboard...`, 'info');
+          }}
+
+          lastPhase = phase;
+
+          // ── Scraping selesai ──
+          if (phase === 'done' || phase === 'error') {{
+            _stopPoller();
+            _setRefreshButtons(false);
+
+            if (phase === 'error') {{
+              showToast(`❌ Scraping gagal: ${{s.error || s.message}}`, 'info');
+              return;
+            }}
+
+            // Muat ulang JSON dan tampilkan hasilnya
+            try {{
+              const newJobs = await _loadNewJobsFromJson();
+              if (newJobs) await _applyNewJobs(newJobs);
+            }} catch (e) {{
+              window.location.reload();
+            }}
+          }}
+        }} catch (pollErr) {{
+          // Server tidak merespons — hentikan polling
+          _stopPoller();
+          _setRefreshButtons(false);
+          showToast('⚠️ Koneksi ke server terputus. Memuat data dari disk...', 'info');
+          try {{
+            const newJobs = await _loadNewJobsFromJson();
+            if (newJobs) await _applyNewJobs(newJobs);
+          }} catch (e) {{ window.location.reload(); }}
+        }}
+      }}, 1500);
+    }};
+
+    // Export to Excel
+    window.exportToExcel = function() {{
+      const btn = document.getElementById('btn-export-excel');
+      const textEl = btn ? btn.querySelector('.excel-text') : null;
+      if (btn) btn.classList.add('exporting');
+      if (textEl) textEl.innerText = 'Mengekspor...';
+
+      try {{
+        // Peta nama kolom: key JSON → Judul Indonesia
+        const COLUMN_MAP = [
+          {{ key: 'id',              label: 'ID Unik'              }},
+          {{ key: 'title',           label: 'Judul Posisi'         }},
+          {{ key: 'company',         label: 'Nama Perusahaan'      }},
+          {{ key: 'location',        label: 'Lokasi'               }},
+          {{ key: 'city_category',   label: 'Kategori Kota'        }},
+          {{ key: 'field_category',  label: 'Bidang Keahlian'      }},
+          {{ key: 'source',          label: 'Portal Sumber'        }},
+          {{ key: 'experience_level',label: 'Pengalaman'           }},
+          {{ key: 'salary',          label: 'Gaji'                 }},
+          {{ key: 'job_type',        label: 'Tipe Pekerjaan'       }},
+          {{ key: 'posted_at',       label: 'Tanggal Diposting'    }},
+          {{ key: 'deadline',        label: 'Batas Lamaran'        }},
+          {{ key: 'matched_keywords',label: 'Keahlian Terdeteksi'  }},
+          {{ key: 'apply_url',       label: 'Link Lamaran'         }},
+        ];
+
+        // Buat baris data
+        const rows = jobs.map(job => {{
+          const row = {{}};
+          const linkUrl = job.apply_url || job.url || '';
+          const exp = job.experience_level || job.experience || 'Fresh Graduate / Entry Level';
+          const postDate = job.posted_at || job.posted_date || 'Tersedia';
+
+          COLUMN_MAP.forEach(col => {{
+            let val = job[col.key];
+            if (col.key === 'apply_url') val = linkUrl;
+            else if (col.key === 'experience_level') val = exp;
+            else if (col.key === 'posted_at') val = postDate;
+            else if (col.key === 'city_category') {{
+              val = val === 'bekasi' ? 'Bekasi / Cikarang' : val === 'jakarta' ? 'Jakarta' : (val || 'Jabodetabek Sekitarnya');
+            }}
+
+            if (Array.isArray(val)) val = val.join(', ');
+            if (val === null || val === undefined) val = '';
+            row[col.label] = val;
+          }});
+          return row;
+        }});
+
+        // Buat worksheet
+        const ws = XLSX.utils.json_to_sheet(rows, {{ header: COLUMN_MAP.map(c => c.label) }});
+
+        // Lebar kolom otomatis
+        const colWidths = COLUMN_MAP.map(col => {{
+          if (col.key === 'apply_url') return {{ wch: 45 }};
+          const maxLen = Math.max(
+            col.label.length,
+            ...rows.map(r => String(r[col.label] || '').length)
+          );
+          return {{ wch: Math.min(Math.max(maxLen + 2, 12), 50) }};
+        }});
+        ws['!cols'] = colWidths;
+
+        // Inject hyperlink aktif pada kolom "Link Lamaran" agar bisa diklik langsung di Excel
+        const urlColIndex = COLUMN_MAP.findIndex(c => c.key === 'apply_url' || c.key === 'url');
+        if (urlColIndex >= 0) {{
+          const urlColLetter = XLSX.utils.encode_col(urlColIndex);
+          jobs.forEach((job, rowIdx) => {{
+            const cellAddr = `${{urlColLetter}}${{rowIdx + 2}}`; // +2 karena row 1 = header
+            const url = (job.apply_url || job.url || '').trim();
+            if (url) {{
+              if (!ws[cellAddr]) ws[cellAddr] = {{ t: 's', v: url }};
+              ws[cellAddr].l = {{ Target: url, Tooltip: 'Klik untuk membuka lowongan' }};
+            }}
+          }});
+        }}
+
+        // Freeze pane baris pertama (header)
+        ws['!freeze'] = {{ xSplit: 0, ySplit: 1 }};
+
+        // Buat workbook
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Lowongan Biologi');
+
+        // Nama file dengan tanggal
+        const now = new Date();
+        const dateStr = `${{now.getFullYear()}}${{String(now.getMonth()+1).padStart(2,'0')}}${{String(now.getDate()).padStart(2,'0')}}`;
+        const filename = `Lowongan_Biologi_Jabek_${{dateStr}}.xlsx`;
+
+        XLSX.writeFile(wb, filename);
+        showToast(`📊 File Excel berhasil diunduh: ${{filename}} (${{jobs.length}} lowongan)`, 'success');
+      }} catch (err) {{
+        showToast('❌ Gagal mengekspor Excel: ' + err.message, 'info');
+      }} finally {{
+        setTimeout(() => {{
+          if (btn) btn.classList.remove('exporting');
+          if (textEl) textEl.innerText = 'Export Excel';
+        }}, 800);
+      }}
+    }};
+
+
+    // Auto-Refresh Poller (Memeriksa data baru secara periodik saat dashboard terbuka)
+    function startAutoRefresh() {{
+      setInterval(async () => {{
+        try {{
+          const res = await fetch('lowongan_biologi_jabek.json?t=' + Date.now());
+          if (res.ok) {{
+            const newJobs = await res.json();
+            if (Array.isArray(newJobs) && newJobs.length > 0) {{
+              if (newJobs.length !== jobs.length || JSON.stringify(newJobs[0]) !== JSON.stringify(jobs[0])) {{
+                const prevCount = jobs.length;
+                jobs.length = 0;
+                jobs.push(...newJobs);
+                updateStats();
+                renderJobs();
+                updateLastTime();
+                const diff = jobs.length - prevCount;
+                if (diff > 0) {{
+                  showToast(`🔔 Siklus Cron: +${{diff}} lowongan baru ditemukan!`, 'success');
+                }}
+              }}
+            }}
+          }}
+        }} catch (e) {{}}
+      }}, 15000); // Cek pembaruan setiap 15 detik
+    }}
+
+    // Initialize
+    updateStats();
+    renderJobs();
+    updateLastTime();
+    startAutoRefresh();
+
+    // Cek apakah server scraper aktif saat halaman dibuka
+    async function checkServerStatus() {{
+      const statusBar = document.getElementById('live-status-bar') || document.querySelector('.live-status-bar');
+      const syncText = document.getElementById('live-sync-text');
+      const pulseDot = document.querySelector('.pulse-dot');
+      const offlineBanner = document.getElementById('offline-banner');
+
+      try {{
+        const res = await fetch('http://127.0.0.1:8000/api/status', {{
+          signal: AbortSignal.timeout(2000)
+        }});
+        if (res.ok) {{
+          // Server ONLINE
+          if (statusBar) statusBar.classList.remove('server-offline');
+          if (syncText) syncText.innerText = 'Server Aktif — Auto-Refresh Tiap 5 Menit';
+          if (pulseDot) pulseDot.style.backgroundColor = '#10B981';
+          if (offlineBanner) offlineBanner.style.display = 'none';
+        }} else {{
+          throw new Error('not ok');
+        }}
+      }} catch (e) {{
+        // Server OFFLINE
+        if (statusBar) statusBar.classList.add('server-offline');
+        if (syncText) syncText.innerText = '⚠️ Server Scraper Tidak Aktif';
+        if (pulseDot) {{
+          pulseDot.style.backgroundColor = '#F59E0B';
+          pulseDot.style.boxShadow = '0 0 0 0 rgba(245, 158, 11, 0.7)';
+          pulseDot.style.animation = 'none';
+        }}
+        if (offlineBanner) offlineBanner.style.display = 'block';
+      }}
+    }}
+
+    checkServerStatus();
+    // Re-cek status server setiap 30 detik
+    setInterval(checkServerStatus, 30000);
+  </script>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+</body>
+</html>
+"""
+    # Simpan ke dashboard.html
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    # Sinkronkan juga ke file alias agar file apa pun yang dibuka pengguna selalu mutakhir
+    sync_names = [
+        "Dashboard-Job-Biology.html",
+        "Dashboard Job Seeker Biology.html"
+    ]
+    for name in sync_names:
+        alt_path = output_path.parent / name
+        try:
+            with open(alt_path, "w", encoding="utf-8") as f:
+                f.write(html_content)
+        except Exception:
+            pass
+
+    return output_path
+
