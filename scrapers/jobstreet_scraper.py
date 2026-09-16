@@ -50,10 +50,16 @@ class JobStreetScraper(BaseScraper):
         results: List[JobItem] = []
         seen_ids = set()
 
-        # Format keyword untuk URL Jobstreet (huruf kecil tanpa spasi -> tanda minus)
+        # Format keyword untuk URL Jobstreet (4 ranah keilmuan S1 Biologi)
         target_queries = [
-            "biologi", "microbiology", "quality-control",
-            "food-safety", "haccp", "laboratorium", "wwtp"
+            # Mikrobiologi & Biologi
+            "biologi", "microbiology", "analis-mikrobiologi", "bioteknologi", "qc-microbiology",
+            # QA/QC & Food Safety
+            "qa-food-safety", "qc-food", "haccp", "gmp",
+            # Bioremediasi & WWTP/IPAL
+            "bioremediasi", "wwtp", "ipal", "water-treatment",
+            # Analis Lab & R&D
+            "analis-laboratorium", "lab-biologi"
         ]
 
         target_locations = [

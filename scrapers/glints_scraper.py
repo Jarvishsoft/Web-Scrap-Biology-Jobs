@@ -77,9 +77,10 @@ class GlintsScraper(BaseScraper):
         results: List[JobItem] = []
         seen_ids = set()
 
-        search_keywords = keywords[:10] if keywords else [
-            "qa food safety", "qc microbiology", "haccp", "gmp",
-            "analis laboratorium", "mikrobiologi", "bioremediasi", "wwtp"
+        search_keywords = keywords[:20] if keywords else [
+            "biologi", "microbiology", "analis mikrobiologi", "bioteknologi",
+            "qc microbiology", "qa food safety", "haccp", "gmp",
+            "bioremediasi", "wwtp biologi", "analis laboratorium"
         ]
 
         for kw in search_keywords:

@@ -58,21 +58,34 @@ def load_stored_jobs(file_path: Path = MASTER_JSON_PATH) -> List[JobItem]:
             return []
 
         jobs: List[JobItem] = []
+        from filters.biology_matcher import is_biology_relevant, classify_biology_field
         for item in raw_data:
             if not isinstance(item, dict) or not item.get("title"):
                 continue
 
+            title = str(item.get("title", ""))
+            description = str(item.get("description", ""))
+
+            # Filter ketat: Hanya masukkan lowongan khusus jurusan Biologi
+            if not is_biology_relevant(title, description):
+                continue
+
+            # Perbarui kategori bidang ke 4 ranah spesialisasi biologi resmi
+            field_category = str(item.get("field_category", ""))
+            if not field_category or field_category in ("Biologi Umum", "Biologi & Sains Umum", "Analis Laboratorium & Bioteknologi"):
+                field_category = classify_biology_field(title, description)
+
             jobs.append(JobItem(
                 id=str(item.get("id", "")),
-                title=str(item.get("title", "")),
+                title=title,
                 company=str(item.get("company", "")),
                 location=str(item.get("location", "")),
                 city_category=str(item.get("city_category", "jabodetabek_lainnya")),
                 is_fresh_graduate=bool(item.get("is_fresh_graduate", True)),
                 experience_level=str(item.get("experience_level", "Fresh Graduate / Entry Level")),
                 salary=str(item.get("salary", "Sesuai Kebijakan Perusahaan")),
-                description=str(item.get("description", "")),
-                field_category=str(item.get("field_category", "Biologi Umum")),
+                description=description,
+                field_category=field_category,
                 matched_keywords=list(item.get("matched_keywords", [])),
                 apply_url=str(item.get("apply_url", item.get("url", ""))),
                 posted_at=str(item.get("posted_at", item.get("posted_date", "Tersedia"))),
@@ -108,8 +121,11 @@ def merge_and_append_jobs(existing_jobs: List[JobItem], new_jobs: List[JobItem])
 
     brand_new_jobs: List[JobItem] = []
 
-    # 2. Periksa lowongan baru satu per satu
+    # 2. Periksa lowongan baru satu per satu (HANYA lowongan khusus jurusan Biologi)
+    from filters.biology_matcher import is_biology_relevant
     for new_job in new_jobs:
+        if not is_biology_relevant(new_job.title, new_job.description):
+            continue
         keys = get_job_dedup_keys(new_job)
         matched_existing: JobItem = None
         

@@ -89,7 +89,7 @@ def run_scrapers(selected_sources: List[str], max_results: int) -> List[JobItem]
 
             try:
                 jobs = scraper.scrape(
-                    keywords=BIOLOGY_KEYWORDS[:10],
+                    keywords=BIOLOGY_KEYWORDS,
                     max_results=max_results
                 )
                 progress.update(task, advance=85)

@@ -20,52 +20,67 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # 4. Mikologi (Fungi, kapang, khamir, jamur, fermentasi)
 # 5. Bioremediasi & Waste Treatment (WWTP, IPAL, analisis limbah, bio-treatment)
 # 6. Analis Laboratorium & R&D
+# Kata Kunci Pencarian KHUSUS LULUSAN BIOLOGI FRESH GRADUATE (4 Peminatan Utama)
 BIOLOGY_KEYWORDS = [
-    # QA/QC & Food Safety
+    # ── 1. QA/QC & Food Safety (HACCP / GMP) ──
     "qa food safety",
     "qc food safety",
+    "quality control",
+    "food safety",
     "quality assurance pangan",
     "quality control pangan",
     "food safety specialist",
     "qc inspector pangan",
-    
-    # HACCP & GMP
     "haccp",
     "gmp",
     "fssc 22000",
     "cppob",
     "cpob",
-    
-    # Mikrobiologi & Mikologi
+    "qa pangan",
+    "qc pangan",
+
+    # ── 2. Mikrobiologi & Mikologi ──
     "mikrobiologi",
     "microbiology",
     "analis mikrobiologi",
     "microbiology analyst",
+    "qc mikrobiologi",
+    "qa mikrobiologi",
+    "qc analyst microbiology",
     "mikologi",
     "mycology",
     "fermentasi",
-    
-    # Bioremediasi & Waste Treatment
+
+    # ── 3. Bioremediasi & Waste Treatment (WWTP/IPAL) ──
     "bioremediasi",
     "bioremediation",
     "waste treatment biologi",
+    "wwtp biologi",
     "wwtp",
     "ipal",
     "water treatment analyst",
-    "pengolahan limbah",
-    "analis lingkungan",
-    
-    # Laboratorium & Biologi Umum
+    "pengolahan limbah biologi",
+    "analis lingkungan biologi",
+
+    # ── 4. Analis Laboratorium & R&D ──
     "analis laboratorium",
     "laboratory analyst",
+    "laboratorium",
+    "analis lab",
+    "teknisi laboratorium biologi",
     "biologi",
+    "s1 biologi",
     "biology",
     "bioteknologi",
+    "biotechnology",
+    "biotech",
+    "analis biologi",
+    "laboratorium biologi",
+    "r&d biologi",
+    "research and development biologi",
     "assistant scientist microbiology",
-    
-    # Event & Walk-in
-    "job fair biologi",
-    "walk in interview qc"
+    "kultur jaringan",
+    "tissue culture"
 ]
 
 # Kamus Relevansi Biologi (Untuk verifikasi konten dan penentuan kategori bidang)
@@ -92,7 +107,7 @@ BIOLOGY_DOMAINS = {
     "bioremediation_waste": {
         "label": "Bioremediasi & Waste Treatment (WWTP/IPAL)",
         "terms": [
-            "bioremediasi", "bioremediation", "waste treatment", "wwtp", "ipal",
+            "bioremediasi", "bioremediation", "waste treatment biologi", "wwtp", "ipal",
             "pengolahan limbah", "limbah cair", "sludge", "lumpur aktif", "bod",
             "cod", "tss", "do meter", "aerob", "anaerob", "kualitas air",
             "lingkungan", "amdal", "b3", "bio-treatment", "degradasi biologis"
@@ -106,13 +121,6 @@ BIOLOGY_DOMAINS = {
             "pcr", "elisa", "spektrofotometer", "kromatografi", "titrasi",
             "preparasi sampel", "iso 17025", "reagen", "bahan kimia"
         ]
-    },
-    "job_fair_event": {
-        "label": "Event Job Fair & Walk-in",
-        "terms": [
-            "job fair", "career expo", "bursa kerja", "walk in interview",
-            "walk-in interview", "festival karier"
-        ]
     }
 }
 
@@ -122,15 +130,39 @@ for domain in BIOLOGY_DOMAINS.values():
     BIOLOGY_RELEVANT_TERMS.extend(domain["terms"])
 BIOLOGY_RELEVANT_TERMS = list(dict.fromkeys(BIOLOGY_RELEVANT_TERMS))
 
-# Kata Kunci Penolak (False Positives seperti IT/Software QA, Developer, Sales, Driver)
+# Kata Kunci Penolak Keras (TIDAK BOLEH MASUK: SEMUA TEKNIK, CULINARY, FURNITURE, STEEL, PPIC, IT, TEACHING)
 BIOLOGY_EXCLUDE_TERMS = [
+    # ── TEKNIK / ENGINEERING (DILARANG KERAS: JANGAN MASUKKAN TEKNIK APAPUN ITU) ──
+    "teknik mesin", "mechanical engineering", "mechanical engineer", "mechanical technician", "mechanic",
+    "teknik elektro", "electrical engineering", "electrical engineer", "electrical technician", "electrician",
+    "teknik industri", "industrial engineering", "industrial engineer",
+    "teknik sipil", "civil engineering", "civil engineer", "site engineer",
+    "teknik informatika", "petroleum", "perminyakan", "metallurgy", "metalurgi", "pertambangan", "mining",
+    "arsitek", "arsitektur", "automotive", "otomotif", "welding", "pengelasan",
+    "piping", "steel", "baja", "konstruksi", "construction", "commissioning engineer",
+    "operator engineering", "engineering wwtp", "teknisi mesin", "operator mesin",
+    "surface material", "battery technician", "operator alat", "maintenance technician",
+    "instrumentation engineer", "drafter", "teknisi listrik", "teknisi ac", "teknisi utility",
+
+    # ── RESTORAN / HOTEL / CULINARY / DAPUR ──
+    "chef", "cook", "commis", "demi chef", "pastry", "kitchen", "dapur",
+    "restoran", "restaurant", "hotel", "f&b service", "f&b team leader",
+    "bartender", "barista", "tata boga", "culinary", "steward", "housekeeping",
+
+    # ── MEBEL / FURNITURE / TEKSTIL / GARMEN / OPERASIONAL PABRIK NON-BIO ──
+    "furniture", "mebel", "kayu", "wood", "tekstil", "garmen", "garment", "sewing",
+    "ppic", "production planning", "material control", "warehouse operator", "gudang",
+    "forklift", "logistik", "supply chain specialist", "inventory control",
+
+    # ── PENGAJAR / GURU SEKOLAH / DOSEN (Fokus pada lowongan industri & lab) ──
+    "teacher", "guru", "dosen", "lecturer", "tentor", "tutor", "pengajar",
+
+    # ── IT / SOFTWARE / FINANCE / UMUM ──
     "software qa", "software quality", "software engineer", "frontend", "backend",
     "full stack", "fullstack", "devops", "qa engineer", "qa tester", "qa manual",
     "qa automation", "automation tester", "test engineer", "sqa", "it quality assurance",
-    "quality assurance engineer", "quality assurance tester", "automation test",
-    "sales motor", "sales mobil", "driver", "kurir", "satpam", "security guard",
-    "telemarketing", "call center", "accounting tax", "pajak", "audit keuangan",
-    "civil engineer", "arsitek bangunan", "mechanical technician motor", "bengkel"
+    "sales motor", "sales mobil", "driver", "supir", "kurir", "satpam",
+    "security guard", "telemarketing", "call center", "accounting", "pajak", "tax"
 ]
 
 # Kamus Lokasi Jakarta & Bekasi (Jabek)

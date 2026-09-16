@@ -73,7 +73,8 @@ class KalibrrScraper(BaseScraper):
 
         search_terms = [
             "biologi", "microbiology", "laboratorium", "biotech",
-            "quality-control", "chemist", "analis-lab"
+            "quality-control", "chemist", "analis-lab", "food-safety",
+            "haccp", "bioremediasi", "wwtp"
         ]
 
         for term in search_terms:

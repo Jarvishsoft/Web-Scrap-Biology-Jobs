@@ -852,12 +852,16 @@ def export_to_dashboard(jobs: List[JobItem], output_path: Path) -> Path:
       <div class="stat-val" id="stat-qa">0</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Mikrobiologi & Lab</div>
+      <div class="stat-label">Mikrobiologi & Mikologi</div>
       <div class="stat-val" id="stat-micro">0</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Area Bekasi / Cikarang</div>
-      <div class="stat-val" id="stat-bekasi">0</div>
+      <div class="stat-label">Bioremediasi & WWTP/IPAL</div>
+      <div class="stat-val" id="stat-wwtp">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Analis Lab & R&D</div>
+      <div class="stat-val" id="stat-lab">0</div>
     </div>
   </div>
 
@@ -880,9 +884,10 @@ def export_to_dashboard(jobs: List[JobItem], output_path: Path) -> Path:
 
     <div class="filter-section">
       <div class="filter-tabs">
-        <button class="filter-btn active" data-filter="all">Semua Bidang & Area</button>
+        <button class="filter-btn active" data-filter="all">Semua Bidang Biologi</button>
         <button class="filter-btn" data-filter="qa_qc">🛡️ QA/QC & Food Safety (HACCP/GMP)</button>
         <button class="filter-btn" data-filter="microbiology">🔬 Mikrobiologi & Mikologi</button>
+        <button class="filter-btn" data-filter="lab_rnd">🧬 Analis Lab & R&D</button>
         <button class="filter-btn" data-filter="bioremediation">🌿 Bioremediasi & WWTP/IPAL</button>
         <button class="filter-btn" data-filter="jakarta">📍 Jakarta</button>
         <button class="filter-btn" data-filter="bekasi">🏭 Bekasi / Cikarang</button>
@@ -929,9 +934,10 @@ def export_to_dashboard(jobs: List[JobItem], output_path: Path) -> Path:
 
     function updateStats() {{
       document.getElementById('stat-total').innerText = jobs.length;
-      document.getElementById('stat-qa').innerText = jobs.filter(j => (j.field_category || '').includes('QA/QC') || (j.matched_keywords || []).some(k => ['qa', 'qc', 'haccp', 'gmp'].includes(k))).length;
+      document.getElementById('stat-qa').innerText = jobs.filter(j => (j.field_category || '').includes('QA/QC') || (j.field_category || '').includes('Food Safety')).length;
       document.getElementById('stat-micro').innerText = jobs.filter(j => (j.field_category || '').includes('Mikro') || (j.title || '').toLowerCase().includes('mikro')).length;
-      document.getElementById('stat-bekasi').innerText = jobs.filter(j => j.city_category === 'bekasi').length;
+      document.getElementById('stat-wwtp').innerText = jobs.filter(j => (j.field_category || '').includes('Bioremediasi') || (j.field_category || '').includes('WWTP') || (j.field_category || '').includes('Waste') || (j.title || '').toLowerCase().includes('wwtp')).length;
+      document.getElementById('stat-lab').innerText = jobs.filter(j => (j.field_category || '').includes('Analis') || (j.field_category || '').includes('R&D') || (j.field_category || '').includes('Biotek')).length;
     }}
 
     function renderJobs() {{
@@ -940,9 +946,10 @@ def export_to_dashboard(jobs: List[JobItem], output_path: Path) -> Path:
         const field = (job.field_category || '').toLowerCase();
         
         // Filter Bidang & Area
-        if (currentFilter === 'qa_qc' && !field.includes('qa/qc') && !field.includes('food safety')) return false;
-        if (currentFilter === 'microbiology' && !field.includes('mikro')) return false;
-        if (currentFilter === 'bioremediation' && !field.includes('bioremediasi') && !field.includes('waste')) return false;
+        if (currentFilter === 'qa_qc' && !field.includes('qa/qc') && !field.includes('food safety') && !field.includes('haccp') && !field.includes('gmp')) return false;
+        if (currentFilter === 'microbiology' && !field.includes('mikro') && !(job.title || '').toLowerCase().includes('mikro')) return false;
+        if (currentFilter === 'lab_rnd' && !field.includes('analis') && !field.includes('lab') && !field.includes('r&d') && !field.includes('biotek')) return false;
+        if (currentFilter === 'bioremediation' && !field.includes('bioremediasi') && !field.includes('waste') && !field.includes('wwtp')) return false;
         if (currentFilter === 'jakarta' && job.city_category !== 'jakarta') return false;
         if (currentFilter === 'bekasi' && job.city_category !== 'bekasi') return false;
 

@@ -37,7 +37,11 @@ class IndeedKarirScraper(BaseScraper):
         results: List[JobItem] = []
         seen_ids = set()
 
-        search_kws = ["biologi", "quality control", "laboratorium", "food safety", "haccp"]
+        search_kws = [
+            "biologi", "microbiology", "laboratorium", "quality control",
+            "food safety", "haccp", "gmp", "bioteknologi",
+            "analis laboratorium", "bioremediasi"
+        ]
 
         for kw in search_kws:
             if len(results) >= max_results:
