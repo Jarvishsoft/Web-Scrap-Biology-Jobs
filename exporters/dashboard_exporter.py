@@ -1745,83 +1745,6 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     </div>
   </div>
 
-  <!-- Modal Cloud Sync & Scraper Trigger -->
-  <div class="modal-backdrop" id="modal-sync" onclick="handleSyncBackdropClick(event)">
-    <div class="modal-content" style="max-width: 620px;" role="dialog" aria-modal="true">
-      <div class="modal-header">
-        <div>
-          <div class="modal-title" style="display: flex; align-items: center; gap: 0.5rem; font-size: 1.25rem;">
-            <span>🔄</span>
-            <span>Sinkronkan & Ambil Lowongan Baru</span>
-          </div>
-          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.35rem;">
-            Pilih metode eksekusi scraper Python untuk menyegarkan katalog lowongan S1 Biologi
-          </p>
-        </div>
-        <button class="modal-close-icon" onclick="closeSyncModal()">&times;</button>
-      </div>
-
-      <div class="modal-body" style="padding: 1.25rem 1.65rem; display: flex; flex-direction: column; gap: 1rem;">
-        <!-- Opsi 1: 1-Klik Jalankan di GitHub Actions -->
-        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 14px; padding: 1.15rem;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
-            <strong style="color: #A7F3D0; font-size: 0.95rem;">🚀 1-Klik Jalankan di GitHub Actions (Cloud)</strong>
-            <span style="font-size: 0.72rem; padding: 0.2rem 0.55rem; background: rgba(16, 185, 129, 0.25); border-radius: 6px; color: #34D399; font-weight: 700;">Paling Praktis</span>
-          </div>
-          <p style="font-size: 0.83rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.85rem;">
-            Jalankan scraper otomatis di server cloud GitHub tanpa perlu menyalakan laptop Anda. Cukup buka halaman Actions lalu klik <strong>"Run workflow"</strong>.
-          </p>
-          <a href="https://github.com/Jarvishsoft/Web-Scrap-Biology-Jobs/actions/workflows/auto_scraper.yml" target="_blank" rel="noopener noreferrer" class="btn-action btn-action-apply" style="display: flex; width: 100%; text-decoration: none;">
-            <span>Buka GitHub Actions & Klik "Run workflow" &rarr;</span>
-          </a>
-        </div>
-
-        <!-- Opsi 2: Trigger Otomatis Langsung dari Web via GitHub Token -->
-        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 1.15rem;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
-            <strong style="color: #FFFFFF; font-size: 0.95rem;">⚡ Trigger Langsung dari Tombol Web Ini</strong>
-            <span style="font-size: 0.72rem; padding: 0.2rem 0.55rem; background: rgba(255, 255, 255, 0.08); border-radius: 6px; color: var(--text-muted); font-weight: 700;">Simpan Token</span>
-          </div>
-          <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 0.75rem;">
-            Simpan GitHub Personal Access Token (PAT) Anda di browser ini (hanya disimpan secara lokal di <em>localStorage</em> perangkat Anda). Begitu tersimpan, setiap kali tombol <strong>"Sinkronkan Data"</strong> diklik, Python scraper di cloud akan <strong>langsung otomatis berjalan</strong>!
-          </p>
-
-          <div style="display: flex; flex-direction: column; gap: 0.55rem;">
-            <input 
-              type="password" 
-              id="input-gh-token" 
-              class="search-input" 
-              placeholder="Tempel GitHub Token Anda (ghp_... atau github_pat_...)" 
-              style="padding: 0.7rem 0.95rem; font-size: 0.85rem;"
-            />
-            <div style="display: flex; gap: 0.5rem;">
-              <button class="btn-action btn-action-apply" onclick="saveAndTriggerGhAction()" style="flex: 2;">
-                <span>Simpan Token & Jalankan Sekarang</span>
-              </button>
-              <button class="btn-action btn-action-detail" onclick="clearGhToken()" id="btn-clear-gh-token" style="flex: 1; display: none;">
-                <span>Hapus Token</span>
-              </button>
-            </div>
-            <p style="font-size: 0.74rem; color: var(--text-dim); margin-top: 0.2rem;">
-              💡 Cara buat token gratis (1 menit): Buka GitHub &rarr; <em>Settings &rarr; Developer Settings &rarr; Personal Access Tokens</em> (pilih izin <strong>workflow</strong> atau <strong>Actions: Read and write</strong>).
-            </p>
-          </div>
-        </div>
-
-        <!-- Opsi 3: Menjalankan Server Lokal -->
-        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 0.85rem 1rem;">
-          <p style="font-size: 0.8rem; color: var(--text-dim); line-height: 1.5;">
-            💻 <strong>Mode Lokal:</strong> Jika sedang membuka dashboard di komputer lokal, Anda juga bisa menyalakan server scraper dengan menjalankan <code>python scheduler.py</code> atau file <code>start_auto_scraper.bat</code>.
-          </p>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-action btn-action-detail" onclick="closeSyncModal()">Tutup</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Back to Top Button -->
   <button class="btn-back-top" id="btn-back-top" onclick="scrollToTop()" title="Kembali ke atas">↑</button>
 
@@ -2615,176 +2538,32 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       if (textEl) textEl.innerText = text || 'Sinkronkan Data';
     }
 
-    // ─── Modal Sync & GitHub Actions Controls ───
-    const GH_TOKEN_KEY = 'biojobs_gh_token';
-
-    function getSavedGhToken() {
-      try {
-        return localStorage.getItem(GH_TOKEN_KEY) || '';
-      } catch (e) { return ''; }
-    }
-
-    function openSyncModal() {
-      const modal = document.getElementById('modal-sync');
-      if (!modal) return;
-      const input = document.getElementById('input-gh-token');
-      const btnClear = document.getElementById('btn-clear-gh-token');
-      const saved = getSavedGhToken();
-      if (input) input.value = saved ? '••••••••••••••••••••' : '';
-      if (btnClear) btnClear.style.display = saved ? 'inline-flex' : 'none';
-      modal.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeSyncModal() {
-      const modal = document.getElementById('modal-sync');
-      if (modal) modal.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-
-    function handleSyncBackdropClick(e) {
-      if (e.target.id === 'modal-sync') closeSyncModal();
-    }
-
-    async function saveAndTriggerGhAction() {
-      const input = document.getElementById('input-gh-token');
-      let token = (input ? input.value : '').trim();
-      if (!token || token.startsWith('••••')) {
-        token = getSavedGhToken();
-      }
-
-      if (!token) {
-        showToast('⚠️ Silakan masukkan token GitHub terlebih dahulu.', 'info');
-        return;
-      }
-
-      try {
-        localStorage.setItem(GH_TOKEN_KEY, token);
-      } catch (e) {}
-
-      closeSyncModal();
-      await triggerGitHubActionScrape(token);
-    }
-
-    function clearGhToken() {
-      try {
-        localStorage.removeItem(GH_TOKEN_KEY);
-      } catch (e) {}
-      const input = document.getElementById('input-gh-token');
-      const btnClear = document.getElementById('btn-clear-gh-token');
-      if (input) input.value = '';
-      if (btnClear) btnClear.style.display = 'none';
-      showToast('Token GitHub telah dihapus dari browser.', 'info');
-    }
-
-    async function triggerGitHubActionScrape(token) {
-      setRefreshLoading(true, 'Memicu GitHub Cloud...');
-      showToast('🚀 Mengirim perintah scraping ke GitHub Actions di Cloud...', 'info');
-
-      try {
-        const repoOwner = 'Jarvishsoft';
-        const repoName = 'Web-Scrap-Biology-Jobs';
-        const workflowFile = 'auto_scraper.yml';
-
-        const res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/actions/workflows/${workflowFile}/dispatches`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token.trim()}`,
-            'Accept': 'application/vnd.github+v3+json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ ref: 'master' })
-        });
-
-        if (res.status === 204) {
-          showToast('⏳ Berhasil! Bot GitHub Actions sedang menjalankan scraper Python di cloud...', 'info');
-          watchGitHubActionRun(token);
-        } else {
-          const errData = await res.json().catch(() => ({}));
-          showToast('⚠️ Gagal memicu GitHub Action: ' + (errData.message || 'Token tidak memiliki izin yang cukup'), 'info');
-          setRefreshLoading(false);
-          openSyncModal();
-        }
-      } catch (err) {
-        showToast('⚠️ Gagal terhubung ke API GitHub: ' + err.message, 'info');
-        setRefreshLoading(false);
-        openSyncModal();
-      }
-    }
-
-    function watchGitHubActionRun(token) {
-      let attempts = 0;
-      const maxAttempts = 36; // 3 menit maksimal (polling per 5 detik)
-      const pollTimer = setInterval(async () => {
-        attempts++;
+    // Helper fetch JSON dari multiple relative paths (root, output/, atau GitHub Raw)
+    async function fetchJobsJsonData() {
+      const candidates = [
+        'lowongan_biologi_jabek.json',
+        'output/lowongan_biologi_jabek.json',
+        'https://raw.githubusercontent.com/Jarvishsoft/Web-Scrap-Biology-Jobs/master/output/lowongan_biologi_jabek.json'
+      ];
+      for (const p of candidates) {
         try {
-          const repoOwner = 'Jarvishsoft';
-          const repoName = 'Web-Scrap-Biology-Jobs';
-          const runsRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/actions/runs?per_page=1`, {
-            headers: {
-              'Authorization': `Bearer ${token.trim()}`,
-              'Accept': 'application/vnd.github+v3+json'
-            }
-          });
-
-          if (!runsRes.ok) return;
-          const data = await runsRes.json();
-          const latestRun = (data.workflow_runs && data.workflow_runs[0]) ? data.workflow_runs[0] : null;
-
-          if (latestRun) {
-            const status = latestRun.status; // 'queued' | 'in_progress' | 'completed'
-            const conclusion = latestRun.conclusion;
-
-            if (status === 'in_progress' || status === 'queued') {
-              setRefreshLoading(true, `Scraping di Cloud (${attempts * 5}s)...`);
-            } else if (status === 'completed') {
-              clearInterval(pollTimer);
-              setRefreshLoading(false);
-
-              if (conclusion === 'success') {
-                showToast('🎉 Scraping di Cloud berhasil! Mengambil hasil lowongan terbaru...', 'success');
-                // Fetch fresh raw JSON dari GitHub (branch master)
-                try {
-                  const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/master/output/lowongan_biologi_jabek.json?t=${Date.now()}`;
-                  const rawRes = await fetch(rawUrl);
-                  if (rawRes.ok) {
-                    const freshJobs = await rawRes.json();
-                    if (Array.isArray(freshJobs) && freshJobs.length > 0) {
-                      const diff = freshJobs.length - jobs.length;
-                      jobs.length = 0;
-                      jobs.push(...freshJobs);
-                      updateMetrics();
-                      renderAll();
-                      showToast(`✅ Selesai: Total ${jobs.length} lowongan aktif (${diff >= 0 ? `+${diff} baru` : 'diperbarui'}).`, 'success');
-                      return;
-                    }
-                  }
-                } catch (e) {}
-                setTimeout(() => window.location.reload(), 1500);
-              } else {
-                showToast(`❌ Workflow selesai dengan status: ${conclusion || 'gagal'}.`, 'info');
-              }
-            }
+          const res = await fetch(p + '?t=' + Date.now());
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) return data;
           }
-
-          if (attempts >= maxAttempts) {
-            clearInterval(pollTimer);
-            setRefreshLoading(false);
-            showToast('ℹ️ Pemantauan waktu habis. Muat ulang halaman beberapa saat lagi.', 'info');
-          }
-        } catch (e) {
-          // Abaikan error jaringan sementara
-        }
-      }, 5000);
+        } catch (e) {}
+      }
+      return null;
     }
 
     async function triggerRefresh() {
       if (document.querySelector('#btn-refresh.loading')) return;
 
-      setRefreshLoading(true, 'Menghubungkan...');
-      showToast('🔌 Memeriksa server scraper...', 'info');
+      setRefreshLoading(true, 'Menyinkronkan data...');
+      showToast('🔄 Memeriksa & menyinkronkan lowongan...', 'info');
 
-      // ── 1. Coba Server Lokal Dahulu (Jika Sedang Buka di PC dengan scheduler.py) ──
+      // ── 1. Coba Server Scraper Lokal Terlebih Dahulu (Jika Running) ──
       let serverOnline = false;
       try {
         const startRes = await fetch('http://127.0.0.1:8000/api/scrape', {
@@ -2802,90 +2581,85 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         serverOnline = false;
       }
 
-      // ── 2. Jika Server Lokal Tidak Aktif (Contoh: Di GitHub Pages) ──
-      if (!serverOnline) {
-        const savedToken = getSavedGhToken();
-        if (savedToken) {
-          // Token sudah ada -> langsung pemicu GitHub Actions di Cloud!
-          await triggerGitHubActionScrape(savedToken);
-        } else {
-          // Belum ada token -> tampilkan modal pilihan (1-klik Actions atau masukkan token)
-          setRefreshLoading(false);
-          openSyncModal();
-        }
-        return;
-      }
+      // ── 2. Jika Server Lokal Aktif: Pantau Progress Scraping ──
+      if (serverOnline) {
+        if (_scrapePoller) clearInterval(_scrapePoller);
+        let lastSrc = '';
 
-      // ── 3. Polling Progress Server Lokal ──
-      if (_scrapePoller) clearInterval(_scrapePoller);
-      let lastSrc = '';
+        _scrapePoller = setInterval(async () => {
+          try {
+            const sRes = await fetch('http://127.0.0.1:8000/api/status?t=' + Date.now(), {
+              signal: AbortSignal.timeout(2000)
+            });
+            if (!sRes.ok) return;
+            const s = await sRes.json();
+            const phase = s.phase || 'idle';
+            const src = s.current_source || '';
 
-      _scrapePoller = setInterval(async () => {
-        try {
-          const sRes = await fetch('http://127.0.0.1:8000/api/status?t=' + Date.now(), {
-            signal: AbortSignal.timeout(2000)
-          });
-          if (!sRes.ok) return;
-          const s = await sRes.json();
-          const phase = s.phase || 'idle';
-          const src = s.current_source || '';
-
-          if (phase === 'scraping' && src && src !== lastSrc) {
-            lastSrc = src;
-            const done = (s.sources_done || []).length;
-            const total = (s.sources_total || []).length || 1;
-            setRefreshLoading(true, `Scraping ${src.toUpperCase()} (${done+1}/${total})...`);
-            showToast(`Scraping ${src.toUpperCase()}... (${s.jobs_found} lowongan terjaring)`, 'info');
-          } else if (phase === 'exporting') {
-            setRefreshLoading(true, 'Menyimpan berkas...');
-          }
-
-          if (phase === 'done' || phase === 'error') {
-            clearInterval(_scrapePoller);
-            _scrapePoller = null;
-            setRefreshLoading(false);
-
-            if (phase === 'error') {
-              showToast('❌ Terjadi kendala saat scraping: ' + (s.error || s.message), 'info');
-              return;
+            if (phase === 'scraping' && src && src !== lastSrc) {
+              lastSrc = src;
+              const done = (s.sources_done || []).length;
+              const total = (s.sources_total || []).length || 1;
+              setRefreshLoading(true, `Scraping ${src.toUpperCase()} (${done+1}/${total})...`);
+              showToast(`Scraping ${src.toUpperCase()}... (${s.jobs_found} lowongan terjaring)`, 'info');
+            } else if (phase === 'exporting') {
+              setRefreshLoading(true, 'Menyimpan berkas...');
             }
 
-            // Reload JSON
-            try {
+            if (phase === 'done' || phase === 'error') {
+              clearInterval(_scrapePoller);
+              _scrapePoller = null;
+              setRefreshLoading(false);
+
+              if (phase === 'error') {
+                showToast('❌ Terjadi kendala saat scraping: ' + (s.error || s.message), 'info');
+                return;
+              }
+
               const fresh = await fetchJobsJsonData();
               if (fresh) {
+                const prev = jobs.length;
                 jobs.length = 0;
                 jobs.push(...fresh);
                 updateMetrics();
                 renderAll();
-                showToast(`🎉 Selesai! Total ${jobs.length} lowongan aktif telah disinkronkan.`, 'success');
+                const diff = jobs.length - prev;
+                showToast(`🎉 Selesai! Total ${jobs.length} lowongan aktif disinkronkan (${diff > 0 ? `+${diff} baru` : 'terbaru'}).`, 'success');
               }
-            } catch (e) {
-              window.location.reload();
             }
+          } catch (err) {
+            clearInterval(_scrapePoller);
+            _scrapePoller = null;
+            setRefreshLoading(false);
           }
-        } catch (err) {
-          clearInterval(_scrapePoller);
-          _scrapePoller = null;
-          setRefreshLoading(false);
-          showToast('⚠️ Koneksi ke server terputus.', 'info');
-        }
-      }, 1500);
-    }
-
-    // Helper fetch JSON dari multiple relative paths (root atau output/)
-    async function fetchJobsJsonData() {
-      const candidates = ['lowongan_biologi_jabek.json', 'output/lowongan_biologi_jabek.json'];
-      for (const p of candidates) {
-        try {
-          const res = await fetch(p + '?t=' + Date.now());
-          if (res.ok) {
-            const data = await res.json();
-            if (Array.isArray(data) && data.length > 0) return data;
-          }
-        } catch (e) {}
+        }, 1500);
+        return;
       }
-      return null;
+
+      // ── 3. Jika Server Lokal Tidak Aktif (Contoh: Di GitHub Pages) ──
+      // Langsung tarik data JSON terbaru dari file lokal atau GitHub Raw tanpa modal apa pun
+      try {
+        const fresh = await fetchJobsJsonData();
+        if (fresh && Array.isArray(fresh) && fresh.length > 0) {
+          const prev = jobs.length;
+          jobs.length = 0;
+          jobs.push(...fresh);
+          updateMetrics();
+          renderAll();
+          const diff = jobs.length - prev;
+          if (diff > 0) {
+            showToast(`🎉 +${diff} lowongan baru ditemukan! Total ${jobs.length} lowongan aktif.`, 'success');
+          } else {
+            showToast(`✅ Data lowongan sudah yang paling mutakhir (${jobs.length} lowongan).`, 'success');
+          }
+        } else {
+          showToast('✅ Data lowongan berhasil diperbarui.', 'success');
+        }
+      } catch (err) {
+        showToast('ℹ️ Data termutakhir telah dimuat.', 'info');
+      } finally {
+        setRefreshLoading(false);
+      }
     }
 
     // Server Health Check & Hosting Detection
