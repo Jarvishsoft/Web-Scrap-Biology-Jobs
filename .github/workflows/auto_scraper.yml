@@ -1,0 +1,42 @@
+name: Auto Scraper & Deploy Dashboard
+
+on:
+  schedule:
+    # Berjalan otomatis 6x sehari pada jam 07:00, 10:00, 13:00, 15:00, 17:00, 19:00 WIB
+    # (UTC = WIB - 7 jam: 00:00, 03:00, 06:00, 08:00, 10:00, 12:00 UTC)
+    - cron: '0 0,3,6,8,10,12 * * *'
+  # Memungkinkan pemicu manual langsung dari tab 'Actions' atau via API dari tombol dashboard
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scrape-and-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Scraper
+        run: |
+          python main.py --sources all --max-results 10
+
+      - name: Commit and Push Updated Data
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html output/
+          git diff --staged --quiet || (git commit -m "chore: auto-refresh biology job listings [skip ci]" && git push)
